@@ -90,3 +90,68 @@ body {
   .topbar { flex-direction: column; gap: 0.6rem; align-items: stretch; }
   .topbar input { width: 100%; }
 }
+
+.inline-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.conditional-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+.file-field-row {
+  display: grid;
+  gap: 0.45rem;
+  grid-column: 1 / -1;
+}
+.muted-label { color: var(--muted); font-size: 0.85rem; }
+.image-preview {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.hidden { display: none !important; }
+.thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.stock-entry-wrap {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: var(--bg);
+}
+.stock-entry-wrap h3 {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+.field label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.form-actions-row {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stock-entry-form .btn {
+  align-self: end;
+  height: fit-content;
+}
