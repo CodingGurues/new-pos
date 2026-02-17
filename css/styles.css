@@ -86,7 +86,14 @@ body {
 .toast.show { opacity: 1; transform: translateY(0); }
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: 1fr; }
-  .sidebar { position: sticky; top: 0; z-index: 10; }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: auto;
+    min-height: unset;
+  }
+  .sidebar-footer { margin-top: 0; }
   .topbar { flex-direction: column; gap: 0.6rem; align-items: stretch; }
   .topbar input { width: 100%; }
 }

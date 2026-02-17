@@ -27,7 +27,11 @@ nav.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   nav.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(btn.dataset.view).classList.add('active');
+  const selectedView = document.getElementById(btn.dataset.view);
+  selectedView.classList.add('active');
+  if (window.innerWidth <= 900) {
+    selectedView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 });
 
 document.getElementById('theme-toggle').onclick = () => {
