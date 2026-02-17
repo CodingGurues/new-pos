@@ -6,19 +6,8 @@ let db;
 const schemaSql = `
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  sku TEXT UNIQUE,
-  category TEXT,
-  cost REAL,
-  price REAL,
-  wholesale_price REAL DEFAULT 0,
-  box_purchase_price REAL,
-  box_sale_price REAL,
-  box_size INTEGER,
-  image_data TEXT,
-  quantity INTEGER,
-  vendor TEXT,
-  threshold INTEGER
+  name TEXT, sku TEXT UNIQUE, category TEXT, cost REAL, price REAL,
+  quantity INTEGER, vendor TEXT, threshold INTEGER
 );
 CREATE TABLE IF NOT EXISTS customers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,14 +27,6 @@ CREATE TABLE IF NOT EXISTS vendor_purchases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   vendor_id INTEGER, product_id INTEGER, qty INTEGER, unit_cost REAL, created_at TEXT
 );
-CREATE TABLE IF NOT EXISTS stock_entries (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id INTEGER,
-  qty INTEGER,
-  cost_price REAL,
-  sale_price REAL,
-  created_at TEXT
-);
 `;
 
 export async function initDB() {
@@ -53,25 +34,9 @@ export async function initDB() {
   const stored = localStorage.getItem(DB_KEY);
   db = stored ? new SQL.Database(Uint8Array.from(atob(stored), c => c.charCodeAt(0))) : new SQL.Database();
   db.run(schemaSql);
-  migrateProductColumns();
   seedData();
   saveDB();
   return db;
-}
-
-function migrateProductColumns() {
-  const cols = db.exec('PRAGMA table_info(products)');
-  const existing = new Set(cols[0]?.values?.map(v => v[1]) || []);
-  const needed = [
-    ['wholesale_price', 'REAL DEFAULT 0'],
-    ['box_purchase_price', 'REAL'],
-    ['box_sale_price', 'REAL'],
-    ['box_size', 'INTEGER'],
-    ['image_data', 'TEXT']
-  ];
-  needed.forEach(([name, type]) => {
-    if (!existing.has(name)) db.run(`ALTER TABLE products ADD COLUMN ${name} ${type}`);
-  });
 }
 
 function seedData() {
@@ -79,10 +44,10 @@ function seedData() {
   if (hasProducts) return;
   db.run(`INSERT INTO vendors(name,phone,address,total_purchase) VALUES
     ('Alpha Mobile Supplies','1234567890','City Center',0),('Prime Accessories','9876543210','Market Road',0);`);
-  db.run(`INSERT INTO products(name,sku,category,cost,price,wholesale_price,quantity,vendor,threshold) VALUES
-    ('USB-C Fast Charger','CHG-001','Chargers',8,15,13,120,'Alpha Mobile Supplies',20),
-    ('Tempered Glass iPhone 14','GLS-014','Screen Guards',1.5,5,4,200,'Prime Accessories',40),
-    ('Wireless Earbuds Pro','EAR-090','Audio',20,35,31,60,'Alpha Mobile Supplies',15);`);
+  db.run(`INSERT INTO products(name,sku,category,cost,price,quantity,vendor,threshold) VALUES
+    ('USB-C Fast Charger','CHG-001','Chargers',8,15,120,'Alpha Mobile Supplies',20),
+    ('Tempered Glass iPhone 14','GLS-014','Screen Guards',1.5,5,200,'Prime Accessories',40),
+    ('Wireless Earbuds Pro','EAR-090','Audio',20,35,60,'Alpha Mobile Supplies',15);`);
   db.run(`INSERT INTO customers(name,phone,email,address,total_purchases,due_amount) VALUES
     ('Ahmed Khan','03001234567','ahmed@example.com','Lahore',0,0),('Sara Ali','03007654321','sara@example.com','Karachi',0,0);`);
 }
@@ -103,8 +68,6 @@ export function exportDB() {
 
 export function importDB(arrayBuffer) {
   db = new SQL.Database(new Uint8Array(arrayBuffer));
-  db.run(schemaSql);
-  migrateProductColumns();
   saveDB();
 }
 
