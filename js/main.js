@@ -4,7 +4,6 @@ import { initInventory, renderInventory } from './inventory.js';
 import { initCustomers, renderCustomers } from './customers.js';
 import { initInvoices, renderInvoices } from './invoices.js';
 import { initVendors, renderVendors } from './vendors.js';
-import { renderReports } from './reports.js';
 import { toast } from './ui.js';
 
 await initDB();
@@ -15,7 +14,6 @@ const refreshAll = () => {
   renderCustomers(refreshAll);
   renderInvoices();
   renderVendors(refreshAll);
-  renderReports();
 };
 
 initInventory(refreshAll);
