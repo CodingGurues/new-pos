@@ -24,10 +24,23 @@ CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL
 );
+CREATE TABLE IF NOT EXISTS areas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
 CREATE TABLE IF NOT EXISTS customers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT, phone TEXT, email TEXT, address TEXT,
-  total_purchases REAL DEFAULT 0, due_amount REAL DEFAULT 0
+  name TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  phone TEXT,
+  email TEXT,
+  area TEXT,
+  address TEXT,
+  note TEXT,
+  picture_data TEXT,
+  total_purchases REAL DEFAULT 0,
+  due_amount REAL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS vendors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,8 +71,10 @@ export async function initDB() {
   db = stored ? new SQL.Database(Uint8Array.from(atob(stored), c => c.charCodeAt(0))) : new SQL.Database();
   db.run(schemaSql);
   migrateProductColumns();
+  migrateCustomerColumns();
   seedData();
   syncCategoriesFromProducts();
+  syncAreasFromCustomers();
   saveDB();
   return db;
 }
@@ -79,6 +94,28 @@ function migrateProductColumns() {
   });
 }
 
+
+function migrateCustomerColumns() {
+  const cols = db.exec('PRAGMA table_info(customers)');
+  const existing = new Set(cols[0]?.values?.map(v => v[1]) || []);
+  const needed = [
+    ['name', 'TEXT'],
+    ['first_name', 'TEXT'],
+    ['last_name', 'TEXT'],
+    ['phone', 'TEXT'],
+    ['email', 'TEXT'],
+    ['area', 'TEXT'],
+    ['address', 'TEXT'],
+    ['note', 'TEXT'],
+    ['picture_data', 'TEXT'],
+    ['total_purchases', 'REAL DEFAULT 0'],
+    ['due_amount', 'REAL DEFAULT 0']
+  ];
+  needed.forEach(([name, type]) => {
+    if (!existing.has(name)) db.run(`ALTER TABLE customers ADD COLUMN ${name} ${type}`);
+  });
+}
+
 function seedData() {
   const hasProducts = db.exec('SELECT COUNT(*) c FROM products')[0].values[0][0] > 0;
   if (hasProducts) return;
@@ -87,12 +124,16 @@ function seedData() {
   db.run(`INSERT INTO categories(name) VALUES
     ('Chargers'),('Screen Guards'),('Audio')
   ON CONFLICT(name) DO NOTHING;`);
+  db.run(`INSERT INTO areas(name) VALUES
+    ('City Center'),('North Zone'),('Market Road')
+  ON CONFLICT(name) DO NOTHING;`);
   db.run(`INSERT INTO products(name,sku,category,cost,price,wholesale_price,quantity,vendor,threshold) VALUES
     ('USB-C Fast Charger','CHG-001','Chargers',8,15,13,120,'Alpha Mobile Supplies',20),
     ('Tempered Glass iPhone 14','GLS-014','Screen Guards',1.5,5,4,200,'Prime Accessories',40),
     ('Wireless Earbuds Pro','EAR-090','Audio',20,35,31,60,'Alpha Mobile Supplies',15);`);
-  db.run(`INSERT INTO customers(name,phone,email,address,total_purchases,due_amount) VALUES
-    ('Ahmed Khan','03001234567','ahmed@example.com','Lahore',0,0),('Sara Ali','03007654321','sara@example.com','Karachi',0,0);`);
+  db.run(`INSERT INTO customers(name,first_name,last_name,phone,area,address,note,total_purchases,due_amount) VALUES
+    ('Ahmed Khan','Ahmed','Khan','03001234567','City Center','Lahore','Regular buyer',0,0),
+    ('Sara Ali','Sara','Ali','03007654321','Market Road','Karachi','',0,0);`);
 }
 
 function syncCategoriesFromProducts() {
@@ -103,9 +144,18 @@ function syncCategoriesFromProducts() {
           ON CONFLICT(name) DO NOTHING;`);
 }
 
+function syncAreasFromCustomers() {
+  db.run(`INSERT INTO areas(name)
+          SELECT DISTINCT TRIM(area)
+          FROM customers
+          WHERE area IS NOT NULL AND TRIM(area) != ''
+          ON CONFLICT(name) DO NOTHING;`);
+}
+
 export function run(sql, params = []) {
   db.run(sql, params);
   if (/\bproducts\b|\bcategories\b/i.test(sql)) syncCategoriesFromProducts();
+  if (/\bcustomers\b|\bareas\b/i.test(sql)) syncAreasFromCustomers();
   saveDB();
 }
 
@@ -125,7 +175,9 @@ export function importDB(arrayBuffer) {
   db = new SQL.Database(new Uint8Array(arrayBuffer));
   db.run(schemaSql);
   migrateProductColumns();
+  migrateCustomerColumns();
   syncCategoriesFromProducts();
+  syncAreasFromCustomers();
   saveDB();
 }
 

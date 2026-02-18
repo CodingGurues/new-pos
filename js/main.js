@@ -1,10 +1,10 @@
-import { initDB, exportDB, importDB } from './db.js?v=stockfix4';
-import { renderDashboard } from './dashboard.js?v=stockfix4';
-import { initInventory, renderInventory } from './inventory.js?v=stockfix4';
-import { initCustomers, renderCustomers } from './customers.js?v=stockfix4';
-import { initInvoices, renderInvoices } from './invoices.js?v=stockfix4';
-import { initVendors, renderVendors } from './vendors.js?v=stockfix4';
-import { toast } from './ui.js?v=stockfix4';
+import { initDB, exportDB, importDB } from './db.js?v=stockfix8';
+import { renderDashboard } from './dashboard.js?v=stockfix8';
+import { initInventory, renderInventory } from './inventory.js?v=stockfix8';
+import { initCustomers, renderCustomers } from './customers.js?v=stockfix8';
+import { initInvoices, renderInvoices } from './invoices.js?v=stockfix8';
+import { initVendors, renderVendors } from './vendors.js?v=stockfix8';
+import { toast } from './ui.js?v=stockfix8';
 
 await initDB();
 
