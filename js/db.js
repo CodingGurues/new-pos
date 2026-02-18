@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS products (
   vendor TEXT,
   threshold INTEGER
 );
+CREATE TABLE IF NOT EXISTS categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
 CREATE TABLE IF NOT EXISTS customers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT, phone TEXT, email TEXT, address TEXT,
@@ -55,6 +59,7 @@ export async function initDB() {
   db.run(schemaSql);
   migrateProductColumns();
   seedData();
+  syncCategoriesFromProducts();
   saveDB();
   return db;
 }
@@ -79,6 +84,9 @@ function seedData() {
   if (hasProducts) return;
   db.run(`INSERT INTO vendors(name,phone,address,total_purchase) VALUES
     ('Alpha Mobile Supplies','1234567890','City Center',0),('Prime Accessories','9876543210','Market Road',0);`);
+  db.run(`INSERT INTO categories(name) VALUES
+    ('Chargers'),('Screen Guards'),('Audio')
+  ON CONFLICT(name) DO NOTHING;`);
   db.run(`INSERT INTO products(name,sku,category,cost,price,wholesale_price,quantity,vendor,threshold) VALUES
     ('USB-C Fast Charger','CHG-001','Chargers',8,15,13,120,'Alpha Mobile Supplies',20),
     ('Tempered Glass iPhone 14','GLS-014','Screen Guards',1.5,5,4,200,'Prime Accessories',40),
@@ -87,7 +95,19 @@ function seedData() {
     ('Ahmed Khan','03001234567','ahmed@example.com','Lahore',0,0),('Sara Ali','03007654321','sara@example.com','Karachi',0,0);`);
 }
 
-export function run(sql, params = []) { db.run(sql, params); saveDB(); }
+function syncCategoriesFromProducts() {
+  db.run(`INSERT INTO categories(name)
+          SELECT DISTINCT TRIM(category)
+          FROM products
+          WHERE category IS NOT NULL AND TRIM(category) != ''
+          ON CONFLICT(name) DO NOTHING;`);
+}
+
+export function run(sql, params = []) {
+  db.run(sql, params);
+  if (/\bproducts\b|\bcategories\b/i.test(sql)) syncCategoriesFromProducts();
+  saveDB();
+}
 
 export function query(sql, params = []) {
   const res = db.exec(sql, params);
@@ -105,11 +125,16 @@ export function importDB(arrayBuffer) {
   db = new SQL.Database(new Uint8Array(arrayBuffer));
   db.run(schemaSql);
   migrateProductColumns();
+  syncCategoriesFromProducts();
   saveDB();
 }
 
 function saveDB() {
   const binary = db.export();
-  const b64 = btoa(String.fromCharCode(...binary));
-  localStorage.setItem(DB_KEY, b64);
+  let binaryString = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < binary.length; i += chunkSize) {
+    binaryString += String.fromCharCode(...binary.subarray(i, i + chunkSize));
+  }
+  localStorage.setItem(DB_KEY, btoa(binaryString));
 }

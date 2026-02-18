@@ -151,6 +151,16 @@ body {
   color: var(--muted);
   font-weight: 600;
 }
+
+.inline-input-action {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+.inline-input-action .ghost-btn {
+  white-space: nowrap;
+}
 .form-actions-row {
   grid-column: 1 / -1;
   display: flex;
@@ -260,4 +270,12 @@ body {
 @media (max-width: 700px) {
   .products-grid { grid-template-columns: 1fr; }
   .product-meta { grid-template-columns: 1fr; }
+}
+
+
+.cards-header {
+  margin-bottom: 0.55rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
 }
