@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix9';
-import { table, toast } from './ui.js?v=stockfix9';
+import { query, run } from './db.js?v=stockfix10';
+import { table, toast } from './ui.js?v=stockfix10';
 
 const MAX_CUSTOMER_IMAGE_MB = 2;
 const CUSTOMER_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
@@ -26,12 +26,6 @@ export function initCustomers(refreshAll) {
         <button id="add-area-btn" class="ghost-btn" type="button">Save Area</button>
       </div>
     </div>
-
-    <div class="field textarea-field">
-      <label>Address (optional)</label>
-      <textarea name="address" rows="3" placeholder="Address (optional)"></textarea>
-    </div>
-
 
     <div class="file-field-row">
       <label class="muted-label">Picture (optional, max ${MAX_CUSTOMER_IMAGE_MB}MB)</label>
@@ -111,7 +105,6 @@ export function initCustomers(refreshAll) {
     const firstName = String(d.first_name || '').trim();
     const lastName = String(d.last_name || '').trim();
     const phone = String(d.phone || '').trim();
-    const address = String(d.address || '').trim();
     const area = String(d.area || '').trim();
 
     if (!firstName || !lastName || !phone) {
@@ -143,16 +136,16 @@ export function initCustomers(refreshAll) {
       if (editingCustomerId) {
         run(
           `UPDATE customers
-           SET name=?, first_name=?, last_name=?, phone=?, area=?, address=?, picture_data=?
+           SET name=?, first_name=?, last_name=?, phone=?, area=?, picture_data=?
            WHERE id=?`,
-          [fullName, firstName, lastName, phone, area || null, address || null, pictureData, editingCustomerId]
+          [fullName, firstName, lastName, phone, area || null, pictureData, editingCustomerId]
         );
         toast('Customer updated');
       } else {
         run(
-          `INSERT INTO customers(name,first_name,last_name,phone,area,address,picture_data,total_purchases,due_amount)
-           VALUES (?,?,?,?,?,?,?,0,0)`,
-          [fullName, firstName, lastName, phone, area || null, address || null, pictureData]
+          `INSERT INTO customers(name,first_name,last_name,phone,area,picture_data,total_purchases,due_amount)
+           VALUES (?,?,?,?,?,?,0,0)`,
+          [fullName, firstName, lastName, phone, area || null, pictureData]
         );
         toast('Customer added');
       }
@@ -217,7 +210,6 @@ function openEditCustomer(customerId) {
   form.elements.first_name.value = customer.first_name || firstName;
   form.elements.last_name.value = customer.last_name || lastName;
   form.elements.phone.value = customer.phone || '';
-  form.elements.address.value = customer.address || '';
   form.elements.new_area.value = '';
 
   syncAreaSelectOptions(customer.area || '');
