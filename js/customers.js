@@ -13,8 +13,12 @@ export function initCustomers(refreshAll) {
   form.onsubmit = e => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(form));
-    run('INSERT INTO customers(name,phone,email,address) VALUES (?,?,?,?)', [d.name, d.phone, d.email, d.address]);
-    form.reset(); toast('Customer added'); refreshAll();
+    try {
+      run('INSERT INTO customers(name,phone,email,address) VALUES (?,?,?,?)', [d.name, d.phone, d.email, d.address]);
+      form.reset(); toast('Customer added'); refreshAll();
+    } catch (error) {
+      toast(error.message || 'Failed to add customer');
+    }
   };
   renderCustomers(refreshAll);
 }
@@ -28,7 +32,11 @@ export function renderCustomers(refreshAll) {
     { key: 'id', label: 'Action', render: v => `<button class="ghost-btn" data-del-cus="${v}">Delete</button>` }
   ], rows);
   document.querySelectorAll('[data-del-cus]').forEach(btn => btn.onclick = () => {
-    run('DELETE FROM customers WHERE id=?', [+btn.dataset.delCus]);
-    toast('Customer deleted'); refreshAll();
+    try {
+      run('DELETE FROM customers WHERE id=?', [+btn.dataset.delCus]);
+      toast('Customer deleted'); refreshAll();
+    } catch (error) {
+      toast(error.message || 'Delete failed');
+    }
   });
 }

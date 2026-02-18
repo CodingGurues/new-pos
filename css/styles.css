@@ -162,3 +162,9 @@ body {
   align-self: end;
   height: fit-content;
 }
+
+
+.visible-fields { grid-column: 1 / -1; }
+.action-group { display: flex; gap: 0.4rem; }
+.danger-btn { border-color: #fecaca; color: #b91c1c; }
+.danger-btn:hover { background: #fee2e2; color: #991b1b; box-shadow: none; transform: none; }

@@ -15,14 +15,18 @@ export function initVendors(refreshAll) {
   form.onsubmit = e => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(form));
-    run('INSERT INTO vendors(name,phone,address,total_purchase) VALUES (?,?,?,0)', [d.name, d.phone, d.address]);
-    const vendorId = query('SELECT last_insert_rowid() id')[0].id;
-    if (d.product_id && d.qty && d.unit_cost) {
-      run('INSERT INTO vendor_purchases(vendor_id,product_id,qty,unit_cost,created_at) VALUES (?,?,?,?,datetime("now"))', [vendorId, +d.product_id, +d.qty, +d.unit_cost]);
-      run('UPDATE products SET quantity = quantity + ? WHERE id=?', [+d.qty, +d.product_id]);
-      run('UPDATE vendors SET total_purchase = total_purchase + ? WHERE id=?', [+d.qty * +d.unit_cost, vendorId]);
+    try {
+      run('INSERT INTO vendors(name,phone,address,total_purchase) VALUES (?,?,?,0)', [d.name, d.phone, d.address]);
+      const vendorId = query('SELECT last_insert_rowid() id')[0].id;
+      if (d.product_id && d.qty && d.unit_cost) {
+        run('INSERT INTO vendor_purchases(vendor_id,product_id,qty,unit_cost,created_at) VALUES (?,?,?,?,datetime("now"))', [vendorId, +d.product_id, +d.qty, +d.unit_cost]);
+        run('UPDATE products SET quantity = quantity + ? WHERE id=?', [+d.qty, +d.product_id]);
+        run('UPDATE vendors SET total_purchase = total_purchase + ? WHERE id=?', [+d.qty * +d.unit_cost, vendorId]);
+      }
+      form.reset(); toast('Vendor saved'); refreshAll();
+    } catch (error) {
+      toast(error.message || 'Failed to save vendor');
     }
-    form.reset(); toast('Vendor saved'); refreshAll();
   };
   renderVendors(refreshAll);
 }

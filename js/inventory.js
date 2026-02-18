@@ -1,6 +1,9 @@
 import { query, run } from './db.js';
 import { table, fmtCurrency, toast } from './ui.js';
 
+let editingProductId = null;
+let editingImageData = null;
+
 export function initInventory(refreshAll) {
   const form = document.getElementById('product-form');
 
@@ -15,48 +18,45 @@ export function initInventory(refreshAll) {
     <div class="field"><label>Vendor *</label><select name="vendor" required></select></div>
     <div class="field"><label>Low Stock Threshold *</label><input name="threshold" type="number" min="0" placeholder="Low Stock Threshold" required /></div>
 
-    <div class="form-actions-row">
-      <label class="inline-switch">
-        <input type="checkbox" id="box-details-toggle" /> Enable Box Pricing Details (optional)
-      </label>
-      <button class="ghost-btn" type="button" id="toggle-image-area">Add Product Image</button>
+    <div class="conditional-fields visible-fields">
+      <div class="field"><label>Box Purchase Price (optional)</label><input name="box_purchase_price" type="number" step="0.01" min="0" placeholder="Box Purchase Price" /></div>
+      <div class="field"><label>Box Sale Price (optional)</label><input name="box_sale_price" type="number" step="0.01" min="0" placeholder="Box Sale Price" /></div>
+      <div class="field"><label>Box Size (Qty in one box) (optional)</label><input name="box_size" type="number" min="1" placeholder="Box Size" /></div>
     </div>
 
-    <div id="box-details" class="conditional-fields hidden">
-      <div class="field"><label>Box Purchase Price</label><input name="box_purchase_price" type="number" step="0.01" min="0" placeholder="Box Purchase Price" /></div>
-      <div class="field"><label>Box Sale Price</label><input name="box_sale_price" type="number" step="0.01" min="0" placeholder="Box Sale Price" /></div>
-      <div class="field"><label>Box Size (Qty in one box)</label><input name="box_size" type="number" min="1" placeholder="Box Size" /></div>
-    </div>
-
-    <div id="image-area" class="file-field-row hidden">
+    <div class="file-field-row">
       <label class="muted-label">Product Image (optional)</label>
       <input id="product-image" name="image" type="file" accept="image/*" />
       <img id="image-preview" class="image-preview hidden" alt="Product preview" />
     </div>
 
-    <button class="btn" type="submit">Save Product</button>
+    <div class="form-actions-row">
+      <button class="btn" id="save-product-btn" type="submit">Save Product</button>
+      <button class="ghost-btn hidden" id="cancel-edit-btn" type="button">Cancel Edit</button>
+    </div>
   `;
 
   syncVendorSelectOptions();
 
-  const boxToggle = form.querySelector('#box-details-toggle');
-  const boxDetails = form.querySelector('#box-details');
-  const imageArea = form.querySelector('#image-area');
-  const imageToggle = form.querySelector('#toggle-image-area');
   const imageInput = form.querySelector('#product-image');
   const imagePreview = form.querySelector('#image-preview');
 
-  boxToggle.onchange = () => boxDetails.classList.toggle('hidden', !boxToggle.checked);
-  imageToggle.onclick = () => imageArea.classList.toggle('hidden');
   imageInput.onchange = async () => {
     const file = imageInput.files?.[0];
     if (!file) {
-      imagePreview.classList.add('hidden');
-      imagePreview.removeAttribute('src');
+      if (!editingImageData) {
+        imagePreview.classList.add('hidden');
+        imagePreview.removeAttribute('src');
+      }
       return;
     }
     imagePreview.src = await fileToDataUrl(file);
     imagePreview.classList.remove('hidden');
+  };
+
+  form.querySelector('#cancel-edit-btn').onclick = () => {
+    resetFormState(form);
+    toast('Edit cancelled');
   };
 
   form.onsubmit = async (e) => {
@@ -68,37 +68,49 @@ export function initInventory(refreshAll) {
       return;
     }
 
-    let imageData = null;
+    let imageData = editingImageData;
     const imageFile = imageInput.files?.[0];
     if (imageFile) imageData = await fileToDataUrl(imageFile);
 
-    run(
-      `INSERT INTO products(name,sku,category,cost,price,wholesale_price,box_purchase_price,box_sale_price,box_size,image_data,quantity,vendor,threshold)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        d.name.trim(),
-        d.sku.trim(),
-        d.category,
-        +d.cost,
-        +d.price,
-        +(d.wholesale_price || d.price),
-        boxToggle.checked && d.box_purchase_price ? +d.box_purchase_price : null,
-        boxToggle.checked && d.box_sale_price ? +d.box_sale_price : null,
-        boxToggle.checked && d.box_size ? +d.box_size : null,
-        imageData,
-        +d.quantity,
-        d.vendor,
-        +d.threshold
-      ]
-    );
+    const values = [
+      d.name.trim(),
+      d.sku.trim(),
+      d.category,
+      +d.cost,
+      +d.price,
+      +(d.wholesale_price || d.price),
+      d.box_purchase_price ? +d.box_purchase_price : null,
+      d.box_sale_price ? +d.box_sale_price : null,
+      d.box_size ? +d.box_size : null,
+      imageData,
+      +d.quantity,
+      d.vendor,
+      +d.threshold
+    ];
 
-    form.reset();
-    boxDetails.classList.add('hidden');
-    imageArea.classList.add('hidden');
-    imagePreview.classList.add('hidden');
-    imagePreview.removeAttribute('src');
-    toast('Product added with updated stock fields');
-    refreshAll();
+    try {
+      if (editingProductId) {
+        run(
+          `UPDATE products
+           SET name=?, sku=?, category=?, cost=?, price=?, wholesale_price=?, box_purchase_price=?, box_sale_price=?, box_size=?, image_data=?, quantity=?, vendor=?, threshold=?
+           WHERE id=?`,
+          [...values, editingProductId]
+        );
+        toast('Product updated');
+      } else {
+        run(
+          `INSERT INTO products(name,sku,category,cost,price,wholesale_price,box_purchase_price,box_sale_price,box_size,image_data,quantity,vendor,threshold)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          values
+        );
+        toast('Product added');
+      }
+
+      resetFormState(form);
+      refreshAll();
+    } catch (error) {
+      toast(error.message || 'Failed to save product');
+    }
   };
 
   renderInventory(refreshAll);
@@ -121,17 +133,36 @@ export function renderInventory(refreshAll) {
       { key: 'quantity', label: 'Qty' },
       { key: 'vendor', label: 'Vendor' },
       { key: 'status', label: 'Status', render: (_, r) => statusTag(r.quantity, r.threshold) },
-      { key: 'id', label: 'Action', render: v => `<button class="ghost-btn" data-del-prod="${v}">Delete</button>` }
+      {
+        key: 'id',
+        label: 'Action',
+        render: v => `<div class="action-group"><button class="ghost-btn" data-edit-prod="${v}">Edit</button><button class="ghost-btn danger-btn" data-del-prod="${v}">Delete</button></div>`
+      }
     ], rows)}
     <div id="add-stock-panel" class="stock-entry-wrap"></div>
   `;
 
+  document.querySelectorAll('[data-edit-prod]').forEach(btn => {
+    btn.onclick = () => openEditProduct(+btn.dataset.editProd);
+  });
+
   document.querySelectorAll('[data-del-prod]').forEach(btn => {
     btn.onclick = () => {
-      if (!confirm('Delete product?')) return;
-      run('DELETE FROM products WHERE id=?', [+btn.dataset.delProd]);
-      toast('Product deleted');
-      refreshAll();
+      if (!confirm('Delete this product permanently?')) return;
+      try {
+        const id = +btn.dataset.delProd;
+        run('DELETE FROM stock_entries WHERE product_id=?', [id]);
+        run('DELETE FROM vendor_purchases WHERE product_id=?', [id]);
+        run('DELETE FROM products WHERE id=?', [id]);
+        if (editingProductId === id) {
+          const form = document.getElementById('product-form');
+          resetFormState(form);
+        }
+        toast('Product deleted');
+        refreshAll();
+      } catch (error) {
+        toast(error.message || 'Delete failed');
+      }
     };
   });
 
@@ -165,11 +196,64 @@ function renderAddStockPanel(refreshAll) {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(form));
 
-    run('UPDATE products SET quantity = quantity + ?, cost = ?, price = ? WHERE id=?', [+d.qty, +d.cost_price, +d.sale_price, +d.product_id]);
-    run('INSERT INTO stock_entries(product_id,qty,cost_price,sale_price,created_at) VALUES (?,?,?,?,datetime("now"))', [+d.product_id, +d.qty, +d.cost_price, +d.sale_price]);
-    toast('Stock quantity and pricing updated in real time');
-    refreshAll();
+    try {
+      run('UPDATE products SET quantity = quantity + ?, cost = ?, price = ? WHERE id=?', [+d.qty, +d.cost_price, +d.sale_price, +d.product_id]);
+      run('INSERT INTO stock_entries(product_id,qty,cost_price,sale_price,created_at) VALUES (?,?,?,?,datetime("now"))', [+d.product_id, +d.qty, +d.cost_price, +d.sale_price]);
+      toast('Stock quantity and pricing updated in real time');
+      refreshAll();
+    } catch (error) {
+      toast(error.message || 'Failed to update stock');
+    }
   };
+}
+
+function openEditProduct(productId) {
+  const form = document.getElementById('product-form');
+  const p = query('SELECT * FROM products WHERE id=?', [productId])[0];
+  if (!p || !form) return;
+
+  editingProductId = productId;
+  editingImageData = p.image_data || null;
+
+  form.elements.name.value = p.name || '';
+  form.elements.sku.value = p.sku || '';
+  form.elements.category.value = p.category || '';
+  form.elements.cost.value = p.cost ?? '';
+  form.elements.price.value = p.price ?? '';
+  form.elements.wholesale_price.value = p.wholesale_price ?? '';
+  form.elements.quantity.value = p.quantity ?? '';
+  form.elements.vendor.value = p.vendor || '';
+  form.elements.threshold.value = p.threshold ?? '';
+  form.elements.box_purchase_price.value = p.box_purchase_price ?? '';
+  form.elements.box_sale_price.value = p.box_sale_price ?? '';
+  form.elements.box_size.value = p.box_size ?? '';
+  form.elements.image.value = '';
+
+  const imagePreview = form.querySelector('#image-preview');
+  if (editingImageData) {
+    imagePreview.src = editingImageData;
+    imagePreview.classList.remove('hidden');
+  } else {
+    imagePreview.classList.add('hidden');
+    imagePreview.removeAttribute('src');
+  }
+
+  form.querySelector('#save-product-btn').textContent = 'Update Product';
+  form.querySelector('#cancel-edit-btn').classList.remove('hidden');
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetFormState(form) {
+  editingProductId = null;
+  editingImageData = null;
+
+  form.reset();
+  syncVendorSelectOptions();
+  const imagePreview = form.querySelector('#image-preview');
+  imagePreview.classList.add('hidden');
+  imagePreview.removeAttribute('src');
+  form.querySelector('#save-product-btn').textContent = 'Save Product';
+  form.querySelector('#cancel-edit-btn').classList.add('hidden');
 }
 
 function syncVendorSelectOptions() {
@@ -178,7 +262,7 @@ function syncVendorSelectOptions() {
   const current = vendorSelect.value;
   const vendors = query('SELECT name FROM vendors ORDER BY name');
   vendorSelect.innerHTML = `<option value="">Select Vendor *</option>${vendors.map(v => `<option value="${v.name}">${v.name}</option>`).join('')}`;
-  if (current) vendorSelect.value = current;
+  if (current && [...vendorSelect.options].some(opt => opt.value === current)) vendorSelect.value = current;
 }
 
 function fileToDataUrl(file) {

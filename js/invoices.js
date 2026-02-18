@@ -15,14 +15,18 @@ export function initInvoices(refreshAll) {
     const tax = +d.tax || 0;
     const total = subtotal - discount + tax;
     const profit = total - costTotal;
-    run('INSERT INTO invoices(customer_id,created_at,subtotal,discount,tax,total,profit,items_json) VALUES (?,?,?,?,?,?,?,?)',
-      [+d.customer_id, new Date().toISOString(), subtotal, discount, tax, total, profit, JSON.stringify([{ product_id: product.id, name: product.name, qty: +d.qty, price: product.price }])]);
-    run('UPDATE products SET quantity = quantity - ? WHERE id=?', [+d.qty, product.id]);
-    run('UPDATE customers SET total_purchases = total_purchases + ? WHERE id=?', [total, +d.customer_id]);
-    toast('Invoice saved');
-    form.reset();
-    renderInvoiceForm(form);
-    refreshAll();
+    try {
+      run('INSERT INTO invoices(customer_id,created_at,subtotal,discount,tax,total,profit,items_json) VALUES (?,?,?,?,?,?,?,?)',
+        [+d.customer_id, new Date().toISOString(), subtotal, discount, tax, total, profit, JSON.stringify([{ product_id: product.id, name: product.name, qty: +d.qty, price: product.price }])]);
+      run('UPDATE products SET quantity = quantity - ? WHERE id=?', [+d.qty, product.id]);
+      run('UPDATE customers SET total_purchases = total_purchases + ? WHERE id=?', [total, +d.customer_id]);
+      toast('Invoice saved');
+      form.reset();
+      renderInvoiceForm(form);
+      refreshAll();
+    } catch (error) {
+      toast(error.message || 'Failed to save invoice');
+    }
   };
   renderInvoices();
 }
