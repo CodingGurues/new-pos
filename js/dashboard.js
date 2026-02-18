@@ -1,5 +1,5 @@
-import { query } from './db.js?v=stockfix10';
-import { fmtCurrency, table } from './ui.js?v=stockfix10';
+import { query } from './db.js?v=stockfix11';
+import { fmtCurrency, table } from './ui.js?v=stockfix11';
 
 export function renderDashboard() {
   const el = document.getElementById('dashboard');

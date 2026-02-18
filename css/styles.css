@@ -286,14 +286,21 @@ body {
   margin-top: 0.1rem;
 }
 .area-field .inline-input-action {
-  gap: 0.6rem;
-  align-items: stretch;
-  margin-top: 0.15rem;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  margin-top: 0.2rem;
 }
 .area-field select {
-  min-height: 40px;
-  padding-right: 0.8rem;
+  min-height: 42px;
+  padding-inline: 0.75rem;
 }
 .area-field .ghost-btn {
-  padding-inline: 0.9rem;
+  min-height: 42px;
+  padding-inline: 0.95rem;
+}
+@media (max-width: 640px) {
+  .area-field .inline-input-action {
+    grid-template-columns: 1fr;
+  }
 }
