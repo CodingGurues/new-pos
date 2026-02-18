@@ -1,5 +1,5 @@
 import { query, run } from './db.js';
-import { table, fmtCurrency, toast } from './ui.js';
+import { fmtCurrency, toast } from './ui.js';
 
 let editingProductId = null;
 let editingImageData = null;
@@ -18,12 +18,7 @@ export function initInventory(refreshAll) {
     <div class="field"><label>Quantity *</label><input name="quantity" type="number" min="0" placeholder="Quantity" required /></div>
     <div class="field"><label>Vendor *</label><select name="vendor" required></select></div>
     <div class="field"><label>Low Stock Threshold *</label><input name="threshold" type="number" min="0" placeholder="Low Stock Threshold" required /></div>
-
-    <div class="conditional-fields visible-fields">
-      <div class="field"><label>Box Purchase Price (optional)</label><input name="box_purchase_price" type="number" step="0.01" min="0" placeholder="Box Purchase Price" /></div>
-      <div class="field"><label>Box Sale Price (optional)</label><input name="box_sale_price" type="number" step="0.01" min="0" placeholder="Box Sale Price" /></div>
-      <div class="field"><label>Box Size (Qty in one box) (optional)</label><input name="box_size" type="number" min="1" placeholder="Box Size" /></div>
-    </div>
+    <div class="field"><label>Box Size (optional)</label><input name="box_size" type="number" min="1" placeholder="Box Size" /></div>
 
     <div class="file-field-row">
       <label class="muted-label">Product Image (optional)</label>
@@ -69,6 +64,15 @@ export function initInventory(refreshAll) {
       return;
     }
 
+    const duplicate = query(
+      'SELECT id FROM products WHERE sku = ? AND (? IS NULL OR id != ?) LIMIT 1',
+      [d.sku.trim(), editingProductId, editingProductId]
+    )[0];
+    if (duplicate) {
+      toast('SKU already exists');
+      return;
+    }
+
     let imageData = editingImageData;
     const imageFile = imageInput.files?.[0];
     if (imageFile) imageData = await fileToDataUrl(imageFile);
@@ -80,8 +84,6 @@ export function initInventory(refreshAll) {
       +d.cost,
       +d.price,
       +(d.wholesale_price || d.price),
-      d.box_purchase_price ? +d.box_purchase_price : null,
-      d.box_sale_price ? +d.box_sale_price : null,
       d.box_size ? +d.box_size : null,
       imageData,
       +d.quantity,
@@ -93,15 +95,15 @@ export function initInventory(refreshAll) {
       if (editingProductId) {
         run(
           `UPDATE products
-           SET name=?, sku=?, category=?, cost=?, price=?, wholesale_price=?, box_purchase_price=?, box_sale_price=?, box_size=?, image_data=?, quantity=?, vendor=?, threshold=?
+           SET name=?, sku=?, category=?, cost=?, price=?, wholesale_price=?, box_size=?, image_data=?, quantity=?, vendor=?, threshold=?
            WHERE id=?`,
           [...values, editingProductId]
         );
         toast('Product updated');
       } else {
         run(
-          `INSERT INTO products(name,sku,category,cost,price,wholesale_price,box_purchase_price,box_sale_price,box_size,image_data,quantity,vendor,threshold)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          `INSERT INTO products(name,sku,category,cost,price,wholesale_price,box_size,image_data,quantity,vendor,threshold)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
           values
         );
         toast('Product added');
@@ -121,25 +123,34 @@ export function initInventory(refreshAll) {
 export function renderInventory(refreshAll) {
   syncVendorSelectOptions();
   const rows = query('SELECT * FROM products ORDER BY id DESC');
-  document.getElementById('inventory-table').innerHTML = `
-    ${table([
-      { key: 'image_data', label: 'Image', render: v => v ? `<img src="${v}" class="thumb" alt="product" />` : '—' },
-      { key: 'name', label: 'Name' },
-      { key: 'sku', label: 'SKU' },
-      { key: 'category', label: 'Category' },
-      { key: 'cost', label: 'Cost', render: v => fmtCurrency(v) },
-      { key: 'price', label: 'Sale', render: v => fmtCurrency(v) },
-      { key: 'wholesale_price', label: 'Wholesale', render: v => fmtCurrency(v) },
-      { key: 'box_size', label: 'Box', render: (_, r) => r.box_size ? `${r.box_size} @ ${fmtCurrency(r.box_sale_price)}` : '—' },
-      { key: 'quantity', label: 'Qty' },
-      { key: 'vendor', label: 'Vendor' },
-      { key: 'status', label: 'Status', render: (_, r) => statusTag(r.quantity, r.threshold) },
-      {
-        key: 'id',
-        label: 'Action',
-        render: v => `<div class="action-group"><button class="ghost-btn edit-btn" data-edit-prod="${v}">Edit</button><button class="ghost-btn danger-btn" data-del-prod="${v}">Delete</button></div>`
-      }
-    ], rows)}
+  const host = document.getElementById('inventory-table');
+
+  host.innerHTML = `
+    <div class="products-grid">
+      ${rows.map(r => `
+        <article class="product-card">
+          <div class="product-card-top">
+            ${r.image_data ? `<img src="${r.image_data}" class="thumb large" alt="${r.name}" />` : '<div class="thumb placeholder">No Image</div>'}
+            <div>
+              <h3>${escapeHtml(r.name || '')}</h3>
+              <p class="muted-text">SKU: ${escapeHtml(r.sku || '-')}</p>
+            </div>
+          </div>
+          <div class="product-meta">
+            <p><strong>Qty:</strong> ${r.quantity ?? 0}</p>
+            <p><strong>Cost:</strong> ${fmtCurrency(r.cost)}</p>
+            <p><strong>Sale:</strong> ${fmtCurrency(r.price)}</p>
+            <p><strong>Wholesale:</strong> ${fmtCurrency(r.wholesale_price)}</p>
+            <p><strong>Vendor:</strong> ${escapeHtml(r.vendor || '-')}</p>
+            <p><strong>Status:</strong> ${statusTag(r.quantity, r.threshold)}</p>
+          </div>
+          <div class="action-group card-actions">
+            <button class="ghost-btn edit-btn" data-edit-prod="${r.id}">Edit</button>
+            <button class="ghost-btn danger-btn" data-del-prod="${r.id}">Delete</button>
+          </div>
+        </article>
+      `).join('') || '<p>No products found.</p>'}
+    </div>
     <div id="add-stock-panel" class="stock-entry-wrap"></div>
   `;
 
@@ -182,7 +193,7 @@ function renderAddStockPanel(refreshAll) {
         <label>Product *</label>
         <select name="product_id" required>
           <option value="">Select Product</option>
-          ${products.map(p => `<option value="${p.id}">${p.name} (${p.sku}) — Qty: ${p.quantity}</option>`).join('')}
+          ${products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.sku)}) — Qty: ${p.quantity}</option>`).join('')}
         </select>
       </div>
       <div class="field"><label>Added Quantity *</label><input name="qty" type="number" min="1" required placeholder="Add Quantity" /></div>
@@ -225,8 +236,6 @@ function openEditProduct(productId) {
   form.elements.quantity.value = p.quantity ?? '';
   form.elements.vendor.value = p.vendor || '';
   form.elements.threshold.value = p.threshold ?? '';
-  form.elements.box_purchase_price.value = p.box_purchase_price ?? '';
-  form.elements.box_sale_price.value = p.box_sale_price ?? '';
   form.elements.box_size.value = p.box_size ?? '';
   form.elements.image.value = '';
 
@@ -240,7 +249,7 @@ function openEditProduct(productId) {
   }
 
   form.querySelector('#save-product-btn').textContent = 'Update Product';
-  form.querySelector('#product-form-mode').textContent = 'Editing Product #' + productId;
+  form.querySelector('#product-form-mode').textContent = `Editing Product #${productId}`;
   form.querySelector('#cancel-edit-btn').classList.remove('hidden');
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -277,4 +286,8 @@ function fileToDataUrl(file) {
   });
 }
 
-const statusTag = (q, t) => q <= 0 ? '<span class="tag out">Out</span>' : q <= t ? '<span class="tag low">Low</span>' : '<span class="tag ok">In Stock</span>';
+function escapeHtml(v) {
+  return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+const statusTag = (q, t) => q <= 0 ? '<span class="tag out">Out of Stock</span>' : q <= t ? '<span class="tag low">Low Stock</span>' : '<span class="tag ok">In Stock</span>';
