@@ -8,6 +8,7 @@ export function initInventory(refreshAll) {
   const form = document.getElementById('product-form');
 
   form.innerHTML = `
+    <div class="form-mode" id="product-form-mode">Add New Product</div>
     <div class="field"><label>Product Name *</label><input name="name" placeholder="Product Name" required /></div>
     <div class="field"><label>Product Code / SKU *</label><input name="sku" placeholder="SKU" required /></div>
     <div class="field"><label>Category *</label><input name="category" placeholder="Category" required /></div>
@@ -136,7 +137,7 @@ export function renderInventory(refreshAll) {
       {
         key: 'id',
         label: 'Action',
-        render: v => `<div class="action-group"><button class="ghost-btn" data-edit-prod="${v}">Edit</button><button class="ghost-btn danger-btn" data-del-prod="${v}">Delete</button></div>`
+        render: v => `<div class="action-group"><button class="ghost-btn edit-btn" data-edit-prod="${v}">Edit</button><button class="ghost-btn danger-btn" data-del-prod="${v}">Delete</button></div>`
       }
     ], rows)}
     <div id="add-stock-panel" class="stock-entry-wrap"></div>
@@ -239,6 +240,7 @@ function openEditProduct(productId) {
   }
 
   form.querySelector('#save-product-btn').textContent = 'Update Product';
+  form.querySelector('#product-form-mode').textContent = 'Editing Product #' + productId;
   form.querySelector('#cancel-edit-btn').classList.remove('hidden');
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -253,6 +255,7 @@ function resetFormState(form) {
   imagePreview.classList.add('hidden');
   imagePreview.removeAttribute('src');
   form.querySelector('#save-product-btn').textContent = 'Save Product';
+  form.querySelector('#product-form-mode').textContent = 'Add New Product';
   form.querySelector('#cancel-edit-btn').classList.add('hidden');
 }
 

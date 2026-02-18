@@ -168,3 +168,32 @@ body {
 .action-group { display: flex; gap: 0.4rem; }
 .danger-btn { border-color: #fecaca; color: #b91c1c; }
 .danger-btn:hover { background: #fee2e2; color: #991b1b; box-shadow: none; transform: none; }
+
+
+.form-mode {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--brand);
+  background: rgba(93, 95, 239, 0.08);
+  border: 1px dashed rgba(93, 95, 239, 0.3);
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+}
+.action-group .ghost-btn {
+  min-width: 72px;
+  font-weight: 600;
+}
+.edit-btn {
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+.edit-btn:hover {
+  background: #dbeafe;
+  color: #1e40af;
+  box-shadow: none;
+  transform: none;
+}
+.danger-btn {
+  background: #fff1f2;
+}
