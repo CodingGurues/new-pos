@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Accessories POS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h1>POS<span>Suite</span></h1>
+        <nav id="sidebar-nav">
+          <button class="nav-item active" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" data-view="inventory">Stock</button>
+          <button class="nav-item" data-view="customers">Customers</button>
+          <button class="nav-item" data-view="invoices">Invoices</button>
+          <button class="nav-item" data-view="vendors">Vendors</button>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="theme-toggle" class="ghost-btn">🌙 Dark Mode</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar card">
+          <input id="global-search" placeholder="Search products, invoices, customers..." />
+          <div class="topbar-actions">
+            <button id="export-db" class="ghost-btn">Export DB</button>
+            <label for="import-db" class="ghost-btn">Import DB</label>
+            <input id="import-db" type="file" accept=".sqlite,.db" hidden />
+            <div class="profile-pill">Admin</div>
+          </div>
+        </header>
+
+        <section id="dashboard" class="view active"></section>
+
+        <section id="inventory" class="view">
+          <div class="card split">
+            <h2>Stock Management</h2>
+            <form id="product-form" class="grid-form"></form>
+          </div>
+          <div class="card"><div id="inventory-table"></div></div>
+        </section>
+
+        <section id="customers" class="view">
+          <div class="card split">
+            <h2>Customer Management</h2>
+            <form id="customer-form" class="grid-form"></form>
+          </div>
+          <div class="card"><div id="customers-table"></div></div>
+        </section>
+
+        <section id="invoices" class="view">
+          <div class="card split">
+            <h2>Create Invoice</h2>
+            <form id="invoice-form" class="grid-form"></form>
+          </div>
+          <div class="card"><div id="invoices-table"></div></div>
+        </section>
+
+        <section id="vendors" class="view">
+          <div class="card split">
+            <h2>Vendor Management</h2>
+            <form id="vendor-form" class="grid-form"></form>
+          </div>
+          <div class="card"><div id="vendors-table"></div></div>
+        </section>
+
+      </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script type="module" src="js/main.js?v=stockfix4"></script>
+  </body>
+</html>
