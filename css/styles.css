@@ -279,3 +279,21 @@ body {
   font-weight: 700;
   font-size: 0.85rem;
 }
+
+
+.area-field {
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+.area-field .inline-input-action {
+  gap: 0.6rem;
+  align-items: stretch;
+  margin-top: 0.15rem;
+}
+.area-field select {
+  min-height: 40px;
+  padding-right: 0.8rem;
+}
+.area-field .ghost-btn {
+  padding-inline: 0.9rem;
+}

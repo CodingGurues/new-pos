@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS customers (
   email TEXT,
   area TEXT,
   address TEXT,
-  note TEXT,
   picture_data TEXT,
   total_purchases REAL DEFAULT 0,
   due_amount REAL DEFAULT 0
@@ -106,7 +105,6 @@ function migrateCustomerColumns() {
     ['email', 'TEXT'],
     ['area', 'TEXT'],
     ['address', 'TEXT'],
-    ['note', 'TEXT'],
     ['picture_data', 'TEXT'],
     ['total_purchases', 'REAL DEFAULT 0'],
     ['due_amount', 'REAL DEFAULT 0']
@@ -131,9 +129,9 @@ function seedData() {
     ('USB-C Fast Charger','CHG-001','Chargers',8,15,13,120,'Alpha Mobile Supplies',20),
     ('Tempered Glass iPhone 14','GLS-014','Screen Guards',1.5,5,4,200,'Prime Accessories',40),
     ('Wireless Earbuds Pro','EAR-090','Audio',20,35,31,60,'Alpha Mobile Supplies',15);`);
-  db.run(`INSERT INTO customers(name,first_name,last_name,phone,area,address,note,total_purchases,due_amount) VALUES
-    ('Ahmed Khan','Ahmed','Khan','03001234567','City Center','Lahore','Regular buyer',0,0),
-    ('Sara Ali','Sara','Ali','03007654321','Market Road','Karachi','',0,0);`);
+  db.run(`INSERT INTO customers(name,first_name,last_name,phone,area,address,total_purchases,due_amount) VALUES
+    ('Ahmed Khan','Ahmed','Khan','03001234567','City Center','Lahore',0,0),
+    ('Sara Ali','Sara','Ali','03007654321','Market Road','Karachi',0,0);`);
 }
 
 function syncCategoriesFromProducts() {

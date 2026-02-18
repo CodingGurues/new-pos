@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix8';
-import { table, fmtCurrency, toast } from './ui.js?v=stockfix8';
+import { query, run } from './db.js?v=stockfix9';
+import { table, fmtCurrency, toast } from './ui.js?v=stockfix9';
 
 export function initVendors(refreshAll) {
   const form = document.getElementById('vendor-form');
