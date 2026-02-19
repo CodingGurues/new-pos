@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix11';
-import { fmtCurrency, toast } from './ui.js?v=stockfix11';
+import { query, run } from './db.js?v=stockfix12';
+import { fmtCurrency, toast } from './ui.js?v=stockfix12';
 
 const MAX_IMAGE_MB = 2;
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];

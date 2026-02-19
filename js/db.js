@@ -42,7 +42,11 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 CREATE TABLE IF NOT EXISTS vendors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT, phone TEXT, address TEXT, total_purchase REAL DEFAULT 0
+  name TEXT,
+  phone TEXT,
+  area TEXT,
+  image_data TEXT,
+  total_purchase REAL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +74,7 @@ export async function initDB() {
   db.run(schemaSql);
   migrateProductColumns();
   migrateCustomerColumns();
+  migrateVendorColumns();
   seedData();
   syncCategoriesFromProducts();
   syncAreasFromCustomers();
@@ -112,10 +117,26 @@ function migrateCustomerColumns() {
   });
 }
 
+
+function migrateVendorColumns() {
+  const cols = db.exec('PRAGMA table_info(vendors)');
+  const existing = new Set(cols[0]?.values?.map(v => v[1]) || []);
+  const needed = [
+    ['name', 'TEXT'],
+    ['phone', 'TEXT'],
+    ['area', 'TEXT'],
+    ['image_data', 'TEXT'],
+    ['total_purchase', 'REAL DEFAULT 0']
+  ];
+  needed.forEach(([name, type]) => {
+    if (!existing.has(name)) db.run(`ALTER TABLE vendors ADD COLUMN ${name} ${type}`);
+  });
+}
+
 function seedData() {
   const hasProducts = db.exec('SELECT COUNT(*) c FROM products')[0].values[0][0] > 0;
   if (hasProducts) return;
-  db.run(`INSERT INTO vendors(name,phone,address,total_purchase) VALUES
+  db.run(`INSERT INTO vendors(name,phone,area,total_purchase) VALUES
     ('Alpha Mobile Supplies','1234567890','City Center',0),('Prime Accessories','9876543210','Market Road',0);`);
   db.run(`INSERT INTO categories(name) VALUES
     ('Chargers'),('Screen Guards'),('Audio')
@@ -142,16 +163,20 @@ function syncCategoriesFromProducts() {
 
 function syncAreasFromCustomers() {
   db.run(`INSERT INTO areas(name)
-          SELECT DISTINCT TRIM(area)
-          FROM customers
-          WHERE area IS NOT NULL AND TRIM(area) != ''
+          SELECT DISTINCT TRIM(name)
+          FROM (
+            SELECT area AS name FROM customers
+            UNION ALL
+            SELECT area AS name FROM vendors
+          )
+          WHERE name IS NOT NULL AND TRIM(name) != ''
           ON CONFLICT(name) DO NOTHING;`);
 }
 
 export function run(sql, params = []) {
   db.run(sql, params);
   if (/\bproducts\b|\bcategories\b/i.test(sql)) syncCategoriesFromProducts();
-  if (/\bcustomers\b|\bareas\b/i.test(sql)) syncAreasFromCustomers();
+  if (/\bcustomers\b|\bvendors\b|\bareas\b/i.test(sql)) syncAreasFromCustomers();
   saveDB();
 }
 
@@ -172,6 +197,7 @@ export function importDB(arrayBuffer) {
   db.run(schemaSql);
   migrateProductColumns();
   migrateCustomerColumns();
+  migrateVendorColumns();
   syncCategoriesFromProducts();
   syncAreasFromCustomers();
   saveDB();
