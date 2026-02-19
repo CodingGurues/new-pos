@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix13';
-import { toast } from './ui.js?v=stockfix13';
+import { query, run } from './db.js?v=stockfix14';
+import { toast } from './ui.js?v=stockfix14';
 
 const MAX_CUSTOMER_IMAGE_MB = 2;
 const CUSTOMER_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];

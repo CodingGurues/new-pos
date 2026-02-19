@@ -1,5 +1,5 @@
-import { query } from './db.js?v=stockfix13';
-import { fmtCurrency, table } from './ui.js?v=stockfix13';
+import { query } from './db.js?v=stockfix14';
+import { fmtCurrency, table } from './ui.js?v=stockfix14';
 
 export function renderDashboard() {
   const el = document.getElementById('dashboard');
@@ -26,7 +26,7 @@ export function renderDashboard() {
 const card = (label, value) => `<article class="card stat-card"><h3>${label}</h3><p>${value}</p></article>`;
 
 function computeStats() {
-  const inv = query('SELECT * FROM invoices ORDER BY id DESC');
+  const inv = query("SELECT * FROM invoices WHERE COALESCE(status,'ISSUED') != 'HOLD' ORDER BY id DESC");
   return {
     totalSales: inv.length,
     revenue: inv.reduce((a, b) => a + b.total, 0),

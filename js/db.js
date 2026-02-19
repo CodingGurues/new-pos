@@ -50,8 +50,28 @@ CREATE TABLE IF NOT EXISTS vendors (
 );
 CREATE TABLE IF NOT EXISTS invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  customer_id INTEGER, created_at TEXT, subtotal REAL, discount REAL, tax REAL,
-  total REAL, profit REAL, items_json TEXT
+  customer_id INTEGER,
+  status TEXT,
+  created_at TEXT,
+  subtotal REAL,
+  discount REAL,
+  tax REAL,
+  total REAL,
+  paid_amount REAL,
+  return_amount REAL,
+  due_amount REAL,
+  payment_type TEXT,
+  profit REAL
+);
+CREATE TABLE IF NOT EXISTS invoice_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER,
+  product_id INTEGER,
+  quantity INTEGER,
+  unit_price REAL,
+  discount REAL,
+  total REAL,
+  profit REAL
 );
 CREATE TABLE IF NOT EXISTS vendor_purchases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,6 +95,7 @@ export async function initDB() {
   migrateProductColumns();
   migrateCustomerColumns();
   migrateVendorColumns();
+  migrateInvoiceColumns();
   seedData();
   syncCategoriesFromProducts();
   syncAreasFromCustomers();
@@ -131,6 +152,39 @@ function migrateVendorColumns() {
   needed.forEach(([name, type]) => {
     if (!existing.has(name)) db.run(`ALTER TABLE vendors ADD COLUMN ${name} ${type}`);
   });
+}
+
+
+function migrateInvoiceColumns() {
+  const cols = db.exec('PRAGMA table_info(invoices)');
+  const existing = new Set(cols[0]?.values?.map(v => v[1]) || []);
+  const needed = [
+    ['customer_id', 'INTEGER'],
+    ['status', 'TEXT'],
+    ['created_at', 'TEXT'],
+    ['subtotal', 'REAL'],
+    ['discount', 'REAL'],
+    ['tax', 'REAL'],
+    ['total', 'REAL'],
+    ['paid_amount', 'REAL'],
+    ['return_amount', 'REAL'],
+    ['due_amount', 'REAL'],
+    ['payment_type', 'TEXT'],
+    ['profit', 'REAL']
+  ];
+  needed.forEach(([name, type]) => {
+    if (!existing.has(name)) db.run(`ALTER TABLE invoices ADD COLUMN ${name} ${type}`);
+  });
+  db.run(`CREATE TABLE IF NOT EXISTS invoice_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER,
+    product_id INTEGER,
+    quantity INTEGER,
+    unit_price REAL,
+    discount REAL,
+    total REAL,
+    profit REAL
+  );`);
 }
 
 function seedData() {
@@ -198,6 +252,7 @@ export function importDB(arrayBuffer) {
   migrateProductColumns();
   migrateCustomerColumns();
   migrateVendorColumns();
+  migrateInvoiceColumns();
   syncCategoriesFromProducts();
   syncAreasFromCustomers();
   saveDB();

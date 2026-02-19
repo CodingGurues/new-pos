@@ -368,3 +368,48 @@ body {
 @media (max-width: 700px) {
   .customers-grid { grid-template-columns: 1fr; }
 }
+
+.invoice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 0.9rem;
+}
+.invoice-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  padding: 0.9rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.5rem;
+  transition: transform 0.18s ease;
+}
+.invoice-card:hover { transform: translateY(-2px); }
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: none;
+  place-items: center;
+  z-index: 40;
+}
+.confirm-modal.show { display: grid; }
+.confirm-modal-content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.8rem;
+}
+.print-invoice {
+  background: #fff;
+  color: #111;
+  padding: 1rem;
+  border-radius: 12px;
+}
+@media print {
+  .sidebar, .topbar, .nav-item, #invoice-form, #invoices-table .cards-header, #invoices-table .invoice-grid, #theme-toggle { display: none !important; }
+  .print-invoice { display: block !important; }
+}
