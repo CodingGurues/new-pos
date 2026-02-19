@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix12';
-import { table, fmtCurrency, toast } from './ui.js?v=stockfix12';
+import { query, run } from './db.js?v=stockfix13';
+import { table, fmtCurrency, toast } from './ui.js?v=stockfix13';
 
 export function initInvoices(refreshAll) {
   const form = document.getElementById('invoice-form');

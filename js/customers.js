@@ -1,5 +1,5 @@
-import { query, run } from './db.js?v=stockfix12';
-import { table, toast } from './ui.js?v=stockfix12';
+import { query, run } from './db.js?v=stockfix13';
+import { toast } from './ui.js?v=stockfix13';
 
 const MAX_CUSTOMER_IMAGE_MB = 2;
 const CUSTOMER_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
@@ -164,27 +164,19 @@ export function renderCustomers(refreshAll) {
   syncAreaSelectOptions();
   const rows = query('SELECT * FROM customers ORDER BY id DESC');
 
-  document.getElementById('customers-table').innerHTML = table([
-    { key: 'id', label: 'Customer Name', render: (_, row) => escapeHtml(getCustomerName(row)) },
-    { key: 'phone', label: 'Phone' },
-    { key: 'area', label: 'Area', render: v => escapeHtml(v || '—') },
-    {
-      key: 'id',
-      label: 'Action',
-      render: v => `
-        <div class="action-group">
-          <button class="ghost-btn edit-btn" data-edit-cus="${v}">Edit</button>
-          <button class="ghost-btn danger-btn" data-del-cus="${v}">Delete</button>
-        </div>
-      `
-    }
-  ], rows);
+  const wrap = document.getElementById('customers-table');
+  wrap.innerHTML = `
+    <div class="cards-header">Customers (${rows.length})</div>
+    <div class="customers-grid">
+      ${rows.map(c => customerCard(c)).join('') || '<div class="muted-text">No customers found.</div>'}
+    </div>
+  `;
 
-  document.querySelectorAll('[data-edit-cus]').forEach(btn => {
+  wrap.querySelectorAll('[data-edit-cus]').forEach(btn => {
     btn.onclick = () => openEditCustomer(+btn.dataset.editCus);
   });
 
-  document.querySelectorAll('[data-del-cus]').forEach(btn => {
+  wrap.querySelectorAll('[data-del-cus]').forEach(btn => {
     btn.onclick = () => {
       if (!confirm('Delete this customer?')) return;
       try {
@@ -196,6 +188,29 @@ export function renderCustomers(refreshAll) {
       }
     };
   });
+}
+
+function customerCard(customer) {
+  const image = customer.picture_data
+    ? `<img class="thumb large" src="${customer.picture_data}" alt="${escapeHtml(getCustomerName(customer))}" />`
+    : '<div class="thumb large placeholder">No Image</div>';
+
+  return `
+    <article class="customer-card">
+      <div class="customer-card-main">
+        ${image}
+        <div>
+          <h3>${escapeHtml(getCustomerName(customer))}</h3>
+          <p class="muted-text">Phone: ${escapeHtml(customer.phone || '—')}</p>
+          <p class="muted-text">Area: ${escapeHtml(customer.area || '—')}</p>
+        </div>
+      </div>
+      <div class="action-group card-actions">
+        <button class="ghost-btn edit-btn" data-edit-cus="${customer.id}">Edit</button>
+        <button class="ghost-btn danger-btn" data-del-cus="${customer.id}">Delete</button>
+      </div>
+    </article>
+  `;
 }
 
 function openEditCustomer(customerId) {
